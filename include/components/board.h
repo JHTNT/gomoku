@@ -1,14 +1,24 @@
+#ifndef BOARD
+#define BOARD
 #include <vector>
 
-#include "components/Types.h"
+#include "core/eval.h"
 
 class Board {
-   public:
+    const int size;
     Color next_color;
+    Evaluator evaluator;
+    std::vector<std::vector<short>> board;
 
+   public:
+    Board(int n);
     bool isGameOver();
     int evaluate(Color color);
+    void putStone(Point move, Color color);
+    void takeStone(Point move, Color color);
     std::vector<std::pair<int, int>> getValuableMoves();
-    Board putStone(Point move, Color color);
-    Board takeStone(Point move, Color color);
+
+    int get_pixel(int i, int j) { return this->board[i][j]; };
+    int get_size() { return this->size; }
 };
+#endif
