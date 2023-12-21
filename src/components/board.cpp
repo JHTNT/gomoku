@@ -12,10 +12,17 @@ Board::Board(int n)
       board{vector<vector<short>>(n, vector<short>(n, -1))} {}
 
 void Board::putStone(Point move, Color color) {
-    int i = move.first, j = move.second;
-    if (this->board[i][j] != -1) cout << "Invalid move " << i << ", " << j;
+    int x = move.first, y = move.second;
+    if (this->board[x][y] != -1) cout << "Invalid move " << x << ", " << y;
 
-    this->board[i][j] = color;
+    this->board[x][y] = color;
     this->next_color = ~this->next_color;
-    this->evaluator.updatePoint(i, j, color);
+    this->evaluator.putStone(x, y, color);
+}
+
+void Board::takeStone(Point move, Color color) {
+    int x = move.first, y = move.second;
+    this->board[x][y] = -1;
+    this->next_color = ~this->next_color;
+    this->evaluator.takeStone(x, y, color);
 }

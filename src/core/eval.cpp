@@ -29,7 +29,7 @@ int directionToIndex(int x, int y) {
     if (x != y) return 3;  // diag (/)
 }
 
-void Evaluator::updatePoint(int x, int y, Color color) {
+void Evaluator::putStone(int x, int y, Color color) {
     // clear scores of this point
     for (int d = 0; d < 4; d++) {
         this->pattern_cache[color][d][x][y] = 0;
@@ -37,8 +37,15 @@ void Evaluator::updatePoint(int x, int y, Color color) {
     }
     this->black_score[x][y] = 0;
     this->white_score[x][y] = 0;
+    updatePoint(x, y, color);
     this->board[x][y] = color;
+}
+void Evaluator::takeStone(int x, int y, Color color) {
+    this->board[x][y] = -1;
+    updatePoint(x, y, color);
+}
 
+void Evaluator::updatePoint(int x, int y, Color color) {
     updatePointPattern(x, y, BLACK);
     updatePointPattern(x, y, WHITE);
 

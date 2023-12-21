@@ -19,8 +19,10 @@ class Evaluator {
    public:
     Evaluator(int n, Board board);
     int evaluate(Color color);
-    int directionToIndex(int i, int j);
-    void updatePoint(int i, int j, Color color);
-    void updatePointPattern(int i, int j, Color color, Points direction);
+    int directionToIndex(int x, int y);
+    void putStone(int x, int y, Color color);
+    void takeStone(int x, int y, Color color);
+    void updatePoint(int x, int y, Color color);
+    void updatePointPattern(int x, int y, Color color, Points direction);
 };
 #endif
