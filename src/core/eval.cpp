@@ -38,6 +38,30 @@ void Evaluator::updatePoint(int x, int y, Color color) {
     this->black_score[x][y] = 0;
     this->white_score[x][y] = 0;
     this->board[x][y] = color;
+
+    updatePointPattern(x, y, BLACK);
+    updatePointPattern(x, y, WHITE);
+
+    for (auto d : all_directions) {
+        for (int sign : {1, -1}) {  // 1 for positive direction, -1 for negative direction
+            for (int step = 1; step <= 5; step++) {
+                bool reach_edge = false;
+                for (Color c : {BLACK, WHITE}) {
+                    int new_x = x + step * sign * d.first, new_y = y + step * sign * d.second;
+                    if (new_x < 0 || new_x >= size || new_y < 0 || new_y >= size) {
+                        reach_edge = true;
+                        break;
+                    } else if (board[new_x][new_y] == ~color) {
+                        continue;  // if find opponent stone, evaluate opponent color
+                    } else if (board[new_x][new_y] == -1) {
+                        this->updatePointPattern(new_x, new_y, color,
+                                                 Points{{d.first * sign, d.second * sign}});
+                    }
+                }
+                if (reach_edge) break;
+            }
+        }
+    }
 }
 
 void Evaluator::updatePointPattern(int x, int y, Color color, Points directions = Points{}) {
