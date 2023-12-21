@@ -7,7 +7,7 @@ using namespace std;
 
 Board::Board(int n)
     : size{n},
-      next_color{Black},
+      next_color{BLACK},
       evaluator{Evaluator(n, *this)},
       board{vector<vector<short>>(n, vector<short>(n, -1))} {}
 
