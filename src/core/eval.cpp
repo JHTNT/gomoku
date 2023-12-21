@@ -3,6 +3,8 @@
 #include <numeric>
 #include <ranges>
 
+#include "core/pattern.h"
+
 using namespace std;
 
 Evaluator::Evaluator(int n, Board b_)
@@ -17,7 +19,7 @@ Evaluator::Evaluator(int n, Board b_)
 int Evaluator::evaluate(Color color) {
     int black = accumulate(black_score.begin(), black_score.end(), 0);
     int white = accumulate(white_score.begin(), white_score.end(), 0);
-    return color == Black ? black - white : white - black;
+    return color == BLACK ? black - white : white - black;
 }
 
 int directionToIndex(int x, int y) {
@@ -25,33 +27,6 @@ int directionToIndex(int x, int y) {
     if (y == 0) return 1;  // horizontal
     if (x == y) return 2;  // diag (\)
     if (x != y) return 3;  // diag (/)
-}
-
-// get the score before putting this stone
-int getPatternScore(Pattern pattern) {
-    switch (pattern) {
-        case Pattern::FIVE:
-            return 100000;  // FOUR
-        case Pattern::BLOCK_FIVE:
-            return 1500;  // BLOCK_FOUR
-        case Pattern::FOUR:
-        case Pattern::FOUR_FOUR:
-        case Pattern::FOUR_THREE:
-            return 1000;  // THREE
-        case Pattern::BLOCK_FOUR:
-            return 150;  // BLOCK_THREE
-        case Pattern::THREE:
-        case Pattern::THREE_THREE:
-            return 100;  // TWO
-        case Pattern::TWO_TWO:
-            return 20;
-        case Pattern::BLOCK_THREE:
-            return 15;  // BLOCK_TWO
-        case Pattern::TWO:
-            return 10;  // ONE
-        default:
-            return 0;
-    }
 }
 
 void Evaluator::updatePoint(int x, int y, Color color) {
@@ -108,7 +83,7 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions 
     }
 
     this->board[x][y] = -1;  // remove temporarily stone
-    if (color == Black) {
+    if (color == BLACK) {
         this->black_score[x][y] = score;
     } else {
         this->white_score[x][y] = score;

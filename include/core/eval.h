@@ -20,9 +20,6 @@ class Evaluator {
     Evaluator(int n, Board board);
     int evaluate(Color color);
     int directionToIndex(int i, int j);
-    Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offset_x,
-                       int offset_y, Color color);
-    int getPatternScore(Pattern pattern);
     void updatePoint(int i, int j, Color color);
     void updatePointPattern(int i, int j, Color color, Points direction);
 };
