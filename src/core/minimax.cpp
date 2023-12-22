@@ -14,7 +14,7 @@ tuple<int, Point, Points> minimax(Board board, Color color, int depth, int alpha
     int max_value = INT_MIN;
     Point move;
     Point best_move{};
-    Points moves = board.getValuableMoves();
+    Points moves = board.getValuableMoves(color, depth);
     Points best_path = Points(path);
     for (auto point : moves) {
         vector<pair<int, int>> new_path = vector<pair<int, int>>(path);
