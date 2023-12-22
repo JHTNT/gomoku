@@ -27,6 +27,7 @@ int directionToIndex(int x, int y) {
     if (y == 0) return 1;  // horizontal
     if (x == y) return 2;  // diag (\)
     if (x != y) return 3;  // diag (/)
+    return -1;
 }
 
 void Evaluator::putStone(int x, int y, Color color) {
@@ -48,8 +49,8 @@ void Evaluator::takeStone(int x, int y, Color color) {
 }
 
 void Evaluator::updatePoint(int x, int y, Color color) {
-    updatePointPattern(x, y, BLACK);
-    updatePointPattern(x, y, WHITE);
+    updatePointPattern(x, y, BLACK, Points{});
+    updatePointPattern(x, y, WHITE, Points{});
 
     for (auto d : all_directions) {
         for (int sign : {1, -1}) {  // 1 for positive direction, -1 for negative direction
@@ -73,7 +74,7 @@ void Evaluator::updatePoint(int x, int y, Color color) {
     }
 }
 
-void Evaluator::updatePointPattern(int x, int y, Color color, Points directions = Points{}) {
+void Evaluator::updatePointPattern(int x, int y, Color color, Points directions) {
     if (board[x][y] != -1) return;
     if (!directions.size()) directions = all_directions;
 
