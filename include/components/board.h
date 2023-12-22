@@ -16,7 +16,7 @@ class Board {
     int evaluate(Color color);
     void putStone(Point move, Color color);
     void takeStone(Point move, Color color);
-    std::vector<std::pair<int, int>> getValuableMoves();
+    Points getValuableMoves(Color color, int depth);
 
     int get_pixel(int i, int j) { return this->board[i][j]; };
     int get_size() { return this->size; }

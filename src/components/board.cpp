@@ -1,5 +1,6 @@
 #include "components/board.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 
@@ -8,7 +9,7 @@ using namespace std;
 Board::Board(int n)
     : size{n},
       next_color{BLACK},
-      evaluator{Evaluator(n, *this)},
+      evaluator{Evaluator(n)},
       board{vector<vector<short>>(n, vector<short>(n, -1))} {}
 
 void Board::putStone(Point move, Color color) {
@@ -25,4 +26,16 @@ void Board::takeStone(Point move, Color color) {
     this->board[x][y] = -1;
     this->next_color = ~this->next_color;
     this->evaluator.takeStone(x, y, color);
+}
+
+Points Board::getValuableMoves(Color color, int depth) {
+    unordered_set<int> moves = this->evaluator.getMoves(color, depth);
+    Points points = Points();
+    for (auto move : moves) points.push_back({move / this->size, move % this->size});
+
+    int center = floor(this->size / 2);
+    if (this->board[center][center] == -1) {
+        points.push_back({center, center});
+    }
+    return points;
 }
