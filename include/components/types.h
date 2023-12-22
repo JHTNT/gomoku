@@ -8,7 +8,6 @@ typedef std::vector<std::pair<int, int>> Points;
 enum Color { BLACK, WHITE, EMPTY = -1 };
 
 constexpr Color operator~(Color c) { return Color(c ^ 1); }
-#endif
 
 enum Pattern {
     FIVE = 5,
@@ -24,3 +23,4 @@ enum Pattern {
     TWO = 2,
     NONE = 0,
 };
+#endif
