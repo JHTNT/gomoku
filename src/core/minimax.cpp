@@ -2,21 +2,25 @@
 
 #include <algorithm>
 #include <climits>
+#include <iostream>
 
 using namespace std;
 
 tuple<int, Point, Points> minimax(Board board, Color color, int depth, int current_depth, int alpha,
                                   int beta, Points path) {
-    if (depth == 0 || board.isGameOver()) {
+    if (current_depth >= depth || board.isGameOver()) {
         return {board.evaluate(color), Point{}, path};
     }
 
-    int max_value = INT_MIN;
-    Point move;
+    int max_value = -100000000;
+    Point move{};
     Point best_move{};
-    Points moves = board.getValuableMoves(color, depth);
     Points best_path = Points(path);
-    for (int d = current_depth; d < depth; d++) {
+    Points moves = board.getValuableMoves(color, depth);
+    if (moves.size() == 0) {
+        return {board.evaluate(color), Point{}, path};
+    }
+    for (int d = current_depth + 1; d <= depth; d++) {
         if (d % 2) continue;  // only evaluate on self turn
         bool end = false;
         for (auto point : moves) {
@@ -25,13 +29,16 @@ tuple<int, Point, Points> minimax(Board board, Color color, int depth, int curre
             board.putStone(point, color);
             auto [current_value, current_move, current_path] =
                 minimax(board, ~color, depth, current_depth + 1, -beta, -alpha, new_path);
+            current_value = -current_value;
             board.takeStone(point, color);
-            if (current_value > max_value) {
-                max_value = current_value;
-                best_move = point;
-                best_path = path;
+            if (current_value > 100000 || d == depth) {
+                if (current_value > max_value) {
+                    max_value = current_value;
+                    best_move = point;
+                    best_path = path;
+                }
             }
-            alpha = max(current_value, alpha);
+            alpha = max(max_value, alpha);
             if (alpha >= 100000) {  // self win
                 end = true;
                 break;

@@ -1,6 +1,7 @@
 #include "core/eval.h"
 
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <ranges>
 
@@ -11,18 +12,23 @@ using namespace std;
 Evaluator::Evaluator(int n)
     : size{n},
       board{vector<vector<short>>(n, vector<short>(n, -1))},
-      black_score{vector<vector<short>>(n, vector<short>(n, -1))},
-      white_score{vector<vector<short>>(n, vector<short>(n, -1))},
+      black_score{vector<vector<short>>(n, vector<short>(n, 0))},
+      white_score{vector<vector<short>>(n, vector<short>(n, 0))},
       pattern_cache{vector<vector<vector<vector<short>>>>(
           2, vector<vector<vector<short>>>(4, vector<vector<short>>(n, vector<short>(n, 0))))} {}
 
 int Evaluator::evaluate(Color color) {
-    int black = accumulate(black_score.begin(), black_score.end(), 0);
-    int white = accumulate(white_score.begin(), white_score.end(), 0);
+    int black = 0, white = 0;
+    for (auto i : black_score) {
+        for (int score : i) black += score;
+    }
+    for (auto i : white_score) {
+        for (int score : i) white += score;
+    }
     return color == BLACK ? black - white : white - black;
 }
 
-int directionToIndex(int x, int y) {
+int Evaluator::directionToIndex(int x, int y) {
     if (x == 0) return 0;  // vertical
     if (y == 0) return 1;  // horizontal
     if (x == y) return 2;  // diag (\)
@@ -39,16 +45,17 @@ void Evaluator::putStone(int x, int y, Color color) {
     this->black_score[x][y] = 0;
     this->white_score[x][y] = 0;
     this->board[x][y] = color;
-    updatePoint(x, y, color);
+    updatePoint(x, y);
     this->history.push_back({x * this->size + y, color});
 }
+
 void Evaluator::takeStone(int x, int y, Color color) {
     this->board[x][y] = -1;
-    updatePoint(x, y, color);
+    updatePoint(x, y);
     this->history.pop_back();
 }
 
-void Evaluator::updatePoint(int x, int y, Color color) {
+void Evaluator::updatePoint(int x, int y) {
     updatePointPattern(x, y, BLACK, Points{});
     updatePointPattern(x, y, WHITE, Points{});
 
@@ -61,10 +68,10 @@ void Evaluator::updatePoint(int x, int y, Color color) {
                     if (new_x < 0 || new_x >= size || new_y < 0 || new_y >= size) {
                         reach_edge = true;
                         break;
-                    } else if (board[new_x][new_y] == ~color) {
+                    } else if (board[new_x][new_y] == ~c) {
                         continue;  // if find opponent stone, evaluate opponent color
                     } else if (board[new_x][new_y] == -1) {
-                        this->updatePointPattern(new_x, new_y, color,
+                        this->updatePointPattern(new_x, new_y, c,
                                                  Points{{d.first * sign, d.second * sign}});
                     }
                 }
@@ -99,6 +106,7 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
         Pattern p = getPattern(board, x, y, d.first, d.second, color);
         if (p == Pattern::NONE) continue;
 
+        // if (p == Pattern::TWO) cout << "TWO: [" << x << ", " << y << "]\n";
         pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = p;
         if (p == Pattern::BLOCK_FOUR) block_four_cnt++;
         if (p == Pattern::THREE) three_cnt++;
@@ -126,11 +134,12 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
 
 bool Evaluator::isPointInLine(int point, vector<int> arr) {
     int inline_distance = 5;  // configurable
+    int x1 = floor(point / this->size), y1 = point % this->size;
     for (auto x : arr) {
-        int x1 = floor(point / this->size), y1 = point % this->size;
         int x2 = floor(x / this->size), y2 = x % this->size;
         if ((x1 == x2 && abs(y1 - y1) < inline_distance) ||
-            (y1 == y1 && abs(x1 - x2) < inline_distance))
+            (y1 == y2 && abs(x1 - x2) < inline_distance) || 
+            (abs(x1 - x2) == abs(y1 - y2) && abs(x1 - x2) < inline_distance))
             return true;
     }
     return false;
@@ -145,8 +154,8 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
 
     vector<int> last_points;
     // vector<pair<int, Color>> processed;
-    for (int i = this->history.size() - 1; i >= history.size() - 4; i--) {
-        last_points.push_back(this->history[i].first);
+    for (auto it = history.end() - min<int>(history.size(), 4); it != history.end(); it++) {
+        last_points.push_back(it->first);
     }
 
     for (Color c : {color, ~color}) {
@@ -164,6 +173,7 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                         continue;
                     }
 
+                    // if (p == Pattern::TWO) cout << "TWO: [" << x << ", " << y << "]\n";
                     points[p].insert(point);
                     if (p == Pattern::FOUR)
                         four_cnt++;

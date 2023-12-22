@@ -16,11 +16,12 @@ tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, in
 
     for (int i = 1; i <= 5; i++) {
         int new_x = x + i * offset_x, new_y = y + i * offset_y;
-        Color current_color = Color(board[new_x][new_y]);
-
-        if (current_color == opposite || new_x >= size || new_y >= size || new_x < 0 || new_y < 0) {
+        if (new_x >= size || new_y >= size || new_x < 0 || new_y < 0) {
             break;  // can't continue conting pattern of self color
         }
+
+        Color current_color = Color(board[new_x][new_y]);
+        if (current_color == opposite) break;
 
         if (current_color == color) {
             self_cnt++;
@@ -66,8 +67,8 @@ Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offs
     if (total_length < 5) return Pattern::NONE;  // can't form any pattern
 
     // five
-    if (no_empty_self_cnt > 5) {
-        if (pos_empty == 0 && neg_empty == 0) {
+    if (no_empty_self_cnt >= 5) {
+        if (pos_empty > 0 && neg_empty > 0) {
             return Pattern::FIVE;
         } else {
             return Pattern::BLOCK_FIVE;
@@ -82,7 +83,8 @@ Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offs
         } else if (pos_empty != 0 || neg_empty != 0) {
             return Pattern::BLOCK_FOUR;
         }
-    } else if (one_empty_self_cnt == 4) {
+    }
+    if (one_empty_self_cnt == 4) {
         return Pattern::BLOCK_FOUR;
     }
 
@@ -94,7 +96,11 @@ Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offs
             return Pattern::BLOCK_THREE;
         }
     } else if (one_empty_self_cnt == 3) {
-        return Pattern::BLOCK_THREE;
+        if (pos_empty >= 1 && neg_empty >= 1) {
+            return Pattern::THREE;
+        } else {
+            return Pattern::BLOCK_THREE;
+        }
     }
 
     // two
