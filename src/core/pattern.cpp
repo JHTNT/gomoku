@@ -4,7 +4,6 @@ using namespace std;
 
 tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, int x, int y,
                                                  int offset_x, int offset_y, Color color) {
-    return;
     int size = board.size();
     Color opposite = ~color;
 
@@ -17,7 +16,7 @@ tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, in
 
     for (int i = 1; i <= 5; i++) {
         int new_x = x + i * offset_x, new_y = y + i * offset_y;
-        Pattern current_color = Pattern(board[new_x][new_y]);
+        Color current_color = Color(board[new_x][new_y]);
 
         if (current_color == opposite || new_x >= size || new_y >= size || new_x < 0 || new_y < 0) {
             break;  // can't continue conting pattern of self color
