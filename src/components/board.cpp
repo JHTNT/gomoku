@@ -54,8 +54,8 @@ void Board::takeStone(Point move, Color color) {
     this->evaluator.takeStone(x, y, color);
 }
 
-Points Board::getValuableMoves(Color color, int depth) {
-    unordered_set<int> moves = this->evaluator.getMoves(color, depth);
+Points Board::getValuableMoves(Color color, int depth, bool vct, bool vcf) {
+    unordered_set<int> moves = this->evaluator.getMoves(color, depth, vct, vcf);
     Points points = Points();
     for (auto move : moves) points.push_back({move / this->size, move % this->size});
 

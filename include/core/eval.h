@@ -27,7 +27,9 @@ class Evaluator {
     void updatePoint(int x, int y);
     void updatePointPattern(int x, int y, Color color, Points direction);
     bool isPointInLine(int point, std::vector<int> arr);
-    std::unordered_map<int, std::unordered_set<int>> getPoints(Color color, int depth);
-    std::unordered_set<int> getMoves(Color color, int depth);
+    int getPatternCountOfPoint(int x, int y, Color color);
+    std::unordered_map<int, std::unordered_set<int>> getPoints(Color color, int depth, bool vct,
+                                                               bool vcf);
+    std::unordered_set<int> getMoves(Color color, int depth, bool vct, bool vcf);
 };
 #endif

@@ -52,6 +52,14 @@ tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, in
 
 Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offset_x, int offset_y,
                    Color color) {
+    // skip empty point
+    if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
+        board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
+        board[x + 2 * offset_x][y + 2 * offset_y] == -1 &&
+        board[x - 2 * offset_x][y - 2 * offset_y] == -1) {
+        return Pattern::NONE;
+    }
+
     auto [pos_inner_empty, pos_total_len, pos_side_empty, pos_self, pos_no_empty_self,
           pos_one_empty_self] = countPattern(board, x, y, offset_x, offset_y, color);
     auto [neg_inner_empty, neg_total_len, neg_side_empty, neg_self, neg_no_empty_self,

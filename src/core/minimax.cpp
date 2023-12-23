@@ -6,8 +6,9 @@
 
 using namespace std;
 
-tuple<int, Point, Points> minimax(Board board, Color color, int depth, int current_depth, int alpha,
-                                  int beta, Points path) {
+tuple<int, Point, Points> minimax(Board& board, Color color, int depth, int current_depth, int alpha,
+                                  int beta, Points path, bool vct, bool vcf) {
+    board.cnt++;
     if (current_depth >= depth || board.isGameOver()) {
         return {board.evaluate(color), Point{}, path};
     }
@@ -16,7 +17,7 @@ tuple<int, Point, Points> minimax(Board board, Color color, int depth, int curre
     Point move{};
     Point best_move{};
     Points best_path = Points(path);
-    Points moves = board.getValuableMoves(color, depth);
+    Points moves = board.getValuableMoves(color, depth, vct, vcf);
     if (moves.size() == 0) {
         return {board.evaluate(color), Point{}, path};
     }
@@ -28,7 +29,7 @@ tuple<int, Point, Points> minimax(Board board, Color color, int depth, int curre
             new_path.push_back(point);
             board.putStone(point, color);
             auto [current_value, current_move, current_path] =
-                minimax(board, ~color, depth, current_depth + 1, -beta, -alpha, new_path);
+                minimax(board, ~color, d, current_depth + 1, -beta, -alpha, new_path, vct, vcf);
             current_value = -current_value;
             board.takeStone(point, color);
             if (current_value > 100000 || d == depth) {

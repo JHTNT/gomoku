@@ -106,7 +106,6 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
         Pattern p = getPattern(board, x, y, d.first, d.second, color);
         if (p == Pattern::NONE) continue;
 
-        // if (p == Pattern::TWO) cout << "TWO: [" << x << ", " << y << "]\n";
         pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = p;
         if (p == Pattern::BLOCK_FOUR) block_four_cnt++;
         if (p == Pattern::THREE) three_cnt++;
@@ -138,14 +137,25 @@ bool Evaluator::isPointInLine(int point, vector<int> arr) {
     for (auto x : arr) {
         int x2 = floor(x / this->size), y2 = x % this->size;
         if ((x1 == x2 && abs(y1 - y1) < inline_distance) ||
-            (y1 == y2 && abs(x1 - x2) < inline_distance) || 
+            (y1 == y2 && abs(x1 - x2) < inline_distance) ||
             (abs(x1 - x2) == abs(y1 - y2) && abs(x1 - x2) < inline_distance))
             return true;
     }
     return false;
 }
 
-unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int depth) {
+int Evaluator::getPatternCountOfPoint(int x, int y, Color color) {
+    int cnt = 0;
+    for (int d = 0; d < 4; d++) {
+        if (this->pattern_cache[color][d][x][y] > Pattern::NONE) {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int depth, bool vct,
+                                                            bool vcf) {
     unordered_map<int, unordered_set<int>> points;
     for (int pattern : {FIVE, BLOCK_FIVE, FOUR, FOUR_FOUR, FOUR_THREE, THREE_THREE, BLOCK_FOUR,
                         THREE, BLOCK_THREE, TWO_TWO, TWO, NONE}) {
@@ -163,8 +173,44 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
             for (int y = 0; y < this->size; y++) {
                 int four_cnt = 0, block_four_cnt = 0, three_cnt = 0;
                 for (int direction = 0; direction < 4; direction++) {
-                    int point = x * this->size + y;
+                    if (this->board[x][y] != -1) continue;  // already put stone
                     Pattern p = Pattern(this->pattern_cache[c][direction][x][y]);
+                    if (p == Pattern::NONE) continue;
+
+                    int point = x * this->size + y;
+
+                    if (vcf) {
+                        if (c == color && !isFour(p) && !isFive(p)) {
+                            continue;
+                        } else if (c == ~color && !(p == FIVE || p == BLOCK_FIVE)) {
+                            continue;
+                        }
+                    }
+
+                    if (vct) {
+                        // only consider self turn
+                        if (depth % 2 == 0) {
+                            if (depth == 0 && c != color) continue;  // only attack
+                            if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
+                            if (p != Pattern::THREE && c != color) continue;
+                            if (depth != 0 && c != color) continue;
+                            if (depth > 0 && (p == Pattern::THREE || p == Pattern::BLOCK_FOUR) &&
+                                getPatternCountOfPoint(x, y, c) == 1)
+                                continue;
+                        } else {  // only consider defence
+                            if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
+                            if (p == Pattern::THREE && c == ~color) continue;
+                            if (depth > 1) {
+                                if (p == Pattern::BLOCK_FOUR &&
+                                    getPatternCountOfPoint(x, y, c) == 1)
+                                    continue;
+                                if (p == Pattern::BLOCK_FOUR && !isPointInLine(point, last_points))
+                                    continue;
+                            }
+                        }
+                    }
+
+                    if (vcf && !isFour(p) && !isFive(p)) continue;
 
                     // ignore pattern value less than THREE when depth >= 3
                     if (depth > 2 &&
@@ -173,7 +219,6 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                         continue;
                     }
 
-                    // if (p == Pattern::TWO) cout << "TWO: [" << x << ", " << y << "]\n";
                     points[p].insert(point);
                     if (p == Pattern::FOUR)
                         four_cnt++;
@@ -196,8 +241,8 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
     return points;
 }
 
-unordered_set<int> Evaluator::getMoves(Color color, int depth) {
-    auto points = getPoints(color, depth);
+unordered_set<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
+    auto points = getPoints(color, depth, vct, vcf);
 
     auto fours = points[Pattern::FOUR];
     auto block_fours = points[Pattern::BLOCK_FOUR];
