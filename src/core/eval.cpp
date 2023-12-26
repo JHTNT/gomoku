@@ -156,6 +156,7 @@ int Evaluator::getPatternCountOfPoint(int x, int y, Color color) {
 
 unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int depth, bool vct,
                                                             bool vcf) {
+    Color first = depth % 2 ? ~color : color;  // if depth is even, set first as self color
     unordered_map<int, unordered_set<int>> points;
     for (int pattern : {FIVE, BLOCK_FIVE, FOUR, FOUR_FOUR, FOUR_THREE, THREE_THREE, BLOCK_FOUR,
                         THREE, BLOCK_THREE, TWO_TWO, TWO, NONE}) {
@@ -180,9 +181,9 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                     int point = x * this->size + y;
 
                     if (vcf) {
-                        if (c == color && !isFour(p) && !isFive(p)) {
+                        if (c == first && !isFour(p) && !isFive(p)) {
                             continue;
-                        } else if (c == ~color && !(p == FIVE || p == BLOCK_FIVE)) {
+                        } else if (c == ~first && !(p == FIVE || p == BLOCK_FIVE)) {
                             continue;
                         }
                     }
@@ -190,16 +191,16 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                     if (vct) {
                         // only consider self turn
                         if (depth % 2 == 0) {
-                            if (depth == 0 && c != color) continue;  // only attack
+                            if (depth == 0 && c != first) continue;  // only attack
                             if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
-                            if (p != Pattern::THREE && c != color) continue;
-                            if (depth != 0 && c != color) continue;
+                            if (p != Pattern::THREE && c != first) continue;
+                            if (depth != 0 && c != first) continue;
                             if (depth > 0 && (p == Pattern::THREE || p == Pattern::BLOCK_FOUR) &&
                                 getPatternCountOfPoint(x, y, c) == 1)
                                 continue;
                         } else {  // only consider defence
                             if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
-                            if (p == Pattern::THREE && c == ~color) continue;
+                            if (p == Pattern::THREE && c == ~first) continue;
                             if (depth > 1) {
                                 if (p == Pattern::BLOCK_FOUR &&
                                     getPatternCountOfPoint(x, y, c) == 1)

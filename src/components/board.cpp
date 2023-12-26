@@ -6,9 +6,9 @@
 
 using namespace std;
 
-Board::Board(int n)
+Board::Board(int n, Color color)
     : size{n},
-      next_color{BLACK},
+      ai_color{color},
       evaluator{Evaluator(n)},
       board{vector<vector<short>>(n, vector<short>(n, -1))} {}
 
@@ -38,19 +38,24 @@ bool Board::isGameOver() {
 
 int Board::evaluate(Color color) { return this->evaluator.evaluate(color); }
 
+bool Board::checkMove(int x, int y) {
+    if (x < 0 || x >= this->size || y < 0 || y >= this->size)
+        return false;
+    else if (this->board[x][y] != -1)
+        return false;
+    else
+        return true;
+}
+
 void Board::putStone(Point move, Color color) {
     int x = move.first, y = move.second;
-    if (this->board[x][y] != -1) cout << "Invalid move " << x << ", " << y;
-
     this->board[x][y] = color;
-    this->next_color = ~this->next_color;
     this->evaluator.putStone(x, y, color);
 }
 
 void Board::takeStone(Point move, Color color) {
     int x = move.first, y = move.second;
     this->board[x][y] = -1;
-    this->next_color = ~this->next_color;
     this->evaluator.takeStone(x, y, color);
 }
 

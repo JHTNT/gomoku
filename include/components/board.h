@@ -11,10 +11,13 @@ class Board {
     std::vector<std::vector<short>> board;
 
    public:
+    const Color ai_color;
+
     int cnt = 0;
-    Board(int n);
+    Board(int n, Color color);
     bool isGameOver();
     int evaluate(Color color);
+    bool checkMove(int x, int y);
     void putStone(Point move, Color color);
     void takeStone(Point move, Color color);
     Points getValuableMoves(Color color, int depth, bool vct, bool vcf);
