@@ -2,7 +2,7 @@
 
 using namespace std;
 
-tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, int x, int y,
+tuple<int, int, int, int, int, int> countPattern(const vector<vector<short>>& board, int x, int y,
                                                  int offset_x, int offset_y, Color color) {
     int size = board.size();
     Color opposite = ~color;
@@ -50,8 +50,8 @@ tuple<int, int, int, int, int, int> countPattern(vector<vector<short>> board, in
             self_cnt,        no_empty_self_cnt, one_empty_self_cnt};
 }
 
-Pattern getPattern(std::vector<std::vector<short>> board, int x, int y, int offset_x, int offset_y,
-                   Color color) {
+Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, int offset_x,
+                   int offset_y, Color color) {
     // skip empty point
     if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
         board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
