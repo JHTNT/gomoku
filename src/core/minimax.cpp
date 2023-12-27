@@ -4,13 +4,34 @@
 #include <climits>
 #include <iostream>
 
+#include "components/cache.h"
+
 using namespace std;
 
-tuple<int, Point, Points> minimax(Board& board, Color color, int depth, int current_depth, int alpha,
-                                  int beta, Points path, bool vct, bool vcf) {
+// <remain_depth (depth - current_depth), value, move, color, path, vct, vcf>
+Cache<tuple<int, int, Point, Color, Points, bool, bool>> minimax_cache{};
+
+tuple<int, Point, Points> minimax(Board& board, Color color, int depth, int current_depth,
+                                  int alpha, int beta, Points path, bool vct, bool vcf) {
     board.cnt++;
     if (current_depth >= depth || board.isGameOver()) {
         return {board.evaluate(color), Point{}, path};
+    }
+
+    // check cache
+    unsigned long long hash = board.get_hash();
+    int remain_depth = INT_MAX;
+    if (minimax_cache.has(hash)) {
+        auto cache = minimax_cache.get(hash);
+        remain_depth = get<0>(cache);
+        if (get<3>(cache) == color &&
+            (get<1>(cache) >= 100000 || remain_depth >= depth - current_depth) &&
+            get<5>(cache) == vct && get<6>(cache) == vcf) {
+            // cout << "found in cache\n";
+            Points& prev_path = get<4>(cache);
+            path.insert(path.end(), prev_path.begin(), prev_path.end());
+            return {get<1>(cache), get<2>(cache), path};
+        }
     }
 
     int max_value = -100000000;
@@ -47,6 +68,19 @@ tuple<int, Point, Points> minimax(Board& board, Color color, int depth, int curr
             if (alpha >= beta) break;
         }
         if (end) break;
+    }
+
+    // update cache
+    if ((current_depth <= 6 || vct || vcf) &&
+        (!minimax_cache.has(hash) || remain_depth < depth - current_depth)) {
+        if (best_path.size() >= current_depth) {
+            minimax_cache.put(
+                hash, {depth - current_depth, max_value, best_move, color,
+                       Points(best_path.begin(), best_path.begin() + current_depth), vct, vcf});
+        } else {
+            minimax_cache.put(
+                hash, {depth - current_depth, max_value, best_move, color, best_path, vct, vcf});
+        }
     }
     return {max_value, best_move, best_path};
 }
