@@ -245,38 +245,74 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
 unordered_set<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
     auto points = getPoints(color, depth, vct, vcf);
 
-    auto fours = points[Pattern::FOUR];
-    auto block_fours = points[Pattern::BLOCK_FOUR];
+    auto& fours = points[Pattern::FOUR];
+    auto& block_fours = points[Pattern::BLOCK_FOUR];
     if (fours.size()) {
         fours.merge(block_fours);
         return fours;
     }
-    auto four_fours = points[Pattern::FOUR_FOUR];
+    auto& four_fours = points[Pattern::FOUR_FOUR];
     if (four_fours.size()) {
         four_fours.merge(block_fours);
         return four_fours;
     }
 
-    auto four_threes = points[Pattern::FOUR_THREE];
-    auto threes = points[Pattern::THREE];
+    auto& four_threes = points[Pattern::FOUR_THREE];
+    auto& threes = points[Pattern::THREE];
     if (four_threes.size()) {
         four_threes.merge(threes);
         return four_threes;
     }
-    auto three_threes = points[Pattern::THREE_THREE];
+    auto& three_threes = points[Pattern::THREE_THREE];
     if (three_threes.size()) {
         three_threes.merge(threes);
         return three_threes;
     }
 
-    auto others = block_fours;
+    unordered_set<int> others;
+    auto it = block_fours.begin();
+    while (others.size() < 20 && it != block_fours.end()) {
+        others.insert(*it);
+        it++;
+    }
     if (others.size() >= 20) return others;
-    others.merge(threes);
+
+    it = three_threes.begin();
+    while (others.size() < 20 && it != three_threes.end()) {
+        others.insert(*it);
+        it++;
+    }
     if (others.size() >= 20) return others;
-    others.merge(points[Pattern::BLOCK_THREE]);
+
+    it = threes.begin();
+    while (others.size() < 20 && it != threes.end()) {
+        others.insert(*it);
+        it++;
+    }
     if (others.size() >= 20) return others;
-    others.merge(points[Pattern::TWO_TWO]);
+
+    auto& block_threes = points[Pattern::BLOCK_THREE];
+    it = block_threes.begin();
+    while (others.size() < 20 && it != block_threes.end()) {
+        others.insert(*it);
+        it++;
+    }
     if (others.size() >= 20) return others;
-    others.merge(points[Pattern::TWO]);
+
+    auto& two_twos = points[Pattern::TWO_TWO];
+    it = two_twos.begin();
+    while (others.size() < 20 && it != two_twos.end()) {
+        others.insert(*it);
+        it++;
+    }
+    if (others.size() >= 20) return others;
+
+    auto& two = points[Pattern::TWO];
+    it = two.begin();
+    while (others.size() < 20 && it != two.end()) {
+        others.insert(*it);
+        it++;
+    }
+    // cout << others.size() << "\n";
     return others;
 }
