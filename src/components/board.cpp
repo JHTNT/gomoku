@@ -75,6 +75,60 @@ void Board::takeStone() {
     this->evaluator.takeStone(last_x, last_y, last_color);
 }
 
+void Board::printBoard() {
+    for (int i = 0; i < this->size; i++) {
+        if (i >= 6) cout << " ";
+        cout << 15 - i << " ";
+        for (int j = 0; j < this->size; j++) {
+            if (j != 0) cout << "─";
+
+            if (this->board[i][j] == Color::BLACK) {
+                cout << "⬤";
+                continue;
+            } else if (this->board[i][j] == Color::WHITE) {
+                cout << "◯";
+                continue;
+            }
+
+            if (i == 0 && j == 0) {
+                cout << "┌";
+                continue;
+            }
+            if (i == 0 && j == 14) {
+                cout << "┐";
+                continue;
+            }
+            if (i == 14 && j == 0) {
+                cout << "└";
+                continue;
+            }
+            if (i == 14 && j == 14) {
+                cout << "┘";
+                continue;
+            }
+            if (i == 0) {
+                cout << "┬";
+                continue;
+            }
+            if (i == 14) {
+                cout << "┴";
+                continue;
+            }
+            if (j == 0) {
+                cout << "├";
+                continue;
+            }
+            if (j == 14) {
+                cout << "┤";
+                continue;
+            }
+            cout << "┼";
+        }
+        cout << "\n";
+    }
+    cout << "   A B C D E F G H I J K L M N O\n";
+}
+
 Points Board::getValuableMoves(Color color, int depth, bool vct, bool vcf) {
     unsigned long long hash = this->zobrist.get_hash();
     if (this->valuable_moves_cache.has(hash)) {

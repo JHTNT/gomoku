@@ -29,6 +29,7 @@ class Board {
     bool checkMove(int x, int y);
     void putStone(Point move, Color color);
     void takeStone();
+    void printBoard();
     Points getValuableMoves(Color color, int depth, bool vct, bool vcf);
 
     int get_pixel(int i, int j) { return this->board[i][j]; }
