@@ -13,27 +13,58 @@ Board::Board(int n, Color color)
       board{vector<vector<short>>(n, vector<short>(n, -1))},
       zobrist{Zobrist(n)} {}
 
-bool Board::isGameOver() {
-    for (int x = 0; x < this->size; x++) {
-        for (int y = 0; y < this->size; y++) {
-            if (this->board[x][y] == -1) continue;
-            for (auto d : this->evaluator.all_directions) {
-                int cnt = 0;
-                int new_x = x + d.first * cnt, new_y = y + d.second * cnt;
-                while (new_x < 0 && new_x >= this->size && new_y < 0 && new_y >= this->size &&
-                       this->board[new_x][new_y] == this->board[x][y]) {
-                    cnt++;
-                }
-                if (cnt >= 5) return true;
-            }
-        }
+Color Board::getWinner() {
+    unsigned long long hash = this->zobrist.get_hash();
+    if (this->winner_cache.has(hash)) {
+        return this->winner_cache.get(hash);
     }
 
     for (int x = 0; x < this->size; x++) {
         for (int y = 0; y < this->size; y++) {
-            if (this->board[x][y] == -1) return false;
+            if (this->board[x][y] == Color::EMPTY) continue;
+            for (auto d : this->evaluator.all_directions) {
+                int cnt = 0;
+                int new_x = x + d.first * cnt, new_y = y + d.second * cnt;
+                while (new_x >= 0 && new_x < this->size && new_y >= 0 && new_y < this->size &&
+                       this->board[new_x][new_y] == this->board[x][y]) {
+                    cnt++;
+                    new_x = x + d.first * cnt, new_y = y + d.second * cnt;
+                }
+
+                if (cnt >= 5) {
+                    this->winner_cache.put(hash, Color(this->board[x][y]));
+                    return Color(this->board[x][y]);
+                }
+            }
         }
     }
+
+    this->winner_cache.put(hash, Color::EMPTY);
+    return Color::EMPTY;
+}
+
+bool Board::isGameOver() {
+    unsigned long long hash = this->zobrist.get_hash();
+    if (this->gameover_cache.has(hash)) {
+        return this->gameover_cache.get(hash);
+    }
+
+    if (this->getWinner() != Color::EMPTY) {
+        this->gameover_cache.put(hash, true);
+        return true;
+    }
+
+    // gameover when there is no empty space
+    for (int x = 0; x < this->size; x++) {
+        for (int y = 0; y < this->size; y++) {
+            if (this->board[x][y] == Color::EMPTY) {
+                this->gameover_cache.put(hash, false);
+                return false;
+            }
+        }
+    }
+
+    this->gameover_cache.put(hash, true);
     return true;
 }
 
@@ -45,7 +76,15 @@ int Board::evaluate(Color color) {
             return get<1>(cache);
         }
     }
-    int score = this->evaluator.evaluate(color);
+
+    int score = 0;
+    Color winner = this->getWinner();
+    if (winner != Color::EMPTY) {
+        score = winner == color ? 10000000 : -10000000;
+    } else {
+        score = this->evaluator.evaluate(color);
+    }
+
     this->evaluation_cache.put(hash, {color, score});
     return score;
 }

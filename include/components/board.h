@@ -18,12 +18,15 @@ class Board {
     Cache<std::pair<Color, int>> evaluation_cache;
     // <color, moves, depth, vct, vcf>
     Cache<std::tuple<Color, Points, int, bool, bool>> valuable_moves_cache;
+    Cache<Color> winner_cache;
+    Cache<bool> gameover_cache;
 
    public:
     const Color ai_color;
 
     int cnt = 0;
     Board(int n, Color color);
+    Color getWinner();
     bool isGameOver();
     int evaluate(Color color);
     bool checkMove(int x, int y);
