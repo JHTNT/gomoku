@@ -31,6 +31,7 @@ class Board {
     void takeStone();
     void printBoard();
     Points getValuableMoves(Color color, int depth, bool vct, bool vcf);
+    Board reverse();
 
     int get_pixel(int i, int j) { return this->board[i][j]; }
     int get_size() { return this->size; }

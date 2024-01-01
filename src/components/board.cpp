@@ -150,3 +150,12 @@ Points Board::getValuableMoves(Color color, int depth, bool vct, bool vcf) {
     this->valuable_moves_cache.put(hash, {color, points, depth, vct, vcf});
     return points;
 }
+
+Board Board::reverse() {
+    Board reverse_board = Board(this->size, ~this->ai_color);
+    for (auto h : this->history) {
+        auto [x, y, color] = h;
+        reverse_board.putStone({x, y}, ~color);
+    }
+    return reverse_board;
+}

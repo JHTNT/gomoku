@@ -25,6 +25,25 @@ void aiPlay(Board& board, Color color, int depth) {
     tie(score, move, path) =
         minimax(board, board.ai_color, depth, 0, -MAX, MAX, Points{}, false, false);
     board.putStone(move, board.ai_color);
+    Board board2 = board.reverse();
+    auto [score2, move2, path2] =
+        minimax(board2, board.ai_color, depth + 8, 0, -MAX, MAX, Points{}, true, false);
+    board.takeStone();
+
+    if (score < 10000000 && score2 == 10000000 && path2.size() > path.size()) {
+        Board board3 = board.reverse();
+        auto [score3, move3, path3] =
+            minimax(board3, board.ai_color, depth + 8, 0, -MAX, MAX, Points{}, true, false);
+        if (path2.size() <= path3.size()) {
+            board.putStone(move2, board.ai_color);
+            board.printBoard();
+            cout << "Score: " << score << ", Move: [" << (15 - move.first) << ", "
+                 << (char) (move.second + 'A') << "]\n";
+            return;
+        }
+    }
+
+    board.putStone(move, board.ai_color);
     board.printBoard();
     cout << "Score: " << score << ", Move: [" << (15 - move.first) << ", "
          << (char) (move.second + 'A') << "]\n";
