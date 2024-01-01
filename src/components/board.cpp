@@ -115,18 +115,35 @@ void Board::takeStone() {
 }
 
 void Board::printBoard() {
+    int last_x = -1, last_y = -1;
+    if (this->history.size() != 0) {
+        auto last_move = this->history.back();
+        last_x = get<0>(last_move);
+        last_y = get<1>(last_move);
+    }
+
     for (int i = 0; i < this->size; i++) {
         if (i >= 6) cout << " ";
         cout << 15 - i << " ";
         for (int j = 0; j < this->size; j++) {
             if (j != 0) cout << "─";
 
-            if (this->board[i][j] == Color::BLACK) {
-                cout << "⬤";
-                continue;
-            } else if (this->board[i][j] == Color::WHITE) {
-                cout << "◯";
-                continue;
+            if (i == last_x && j == last_y) {
+                if (this->board[i][j] == Color::BLACK) {
+                    cout << "\033[31m⬤\033[0m";
+                    continue;
+                } else if (this->board[i][j] == Color::WHITE) {
+                    cout << "\033[31m◯\033[0m";
+                    continue;
+                }
+            } else {
+                if (this->board[i][j] == Color::BLACK) {
+                    cout << "⬤";
+                    continue;
+                } else if (this->board[i][j] == Color::WHITE) {
+                    cout << "◯";
+                    continue;
+                }
             }
 
             if (i == 0 && j == 0) {
