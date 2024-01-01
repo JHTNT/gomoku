@@ -30,6 +30,6 @@ class Evaluator {
     int getPatternCountOfPoint(int x, int y, Color color);
     std::unordered_map<int, std::unordered_set<int>> getPoints(Color color, int depth, bool vct,
                                                                bool vcf);
-    std::unordered_set<int> getMoves(Color color, int depth, bool vct, bool vcf);
+    std::vector<int> getMoves(Color color, int depth, bool vct, bool vcf);
 };
 #endif

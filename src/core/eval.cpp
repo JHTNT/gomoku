@@ -82,8 +82,8 @@ void Evaluator::updatePoint(int x, int y) {
 }
 
 void Evaluator::updatePointPattern(int x, int y, Color color, Points directions) {
-    if (board[x][y] != -1) return;
-    if (!directions.size()) directions = all_directions;
+    if (board[x][y] != Color::EMPTY) return;
+    if (directions.size() == 0) directions = all_directions;
 
     this->board[x][y] = color;  // put temporarily stone
 
@@ -124,6 +124,14 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
     }
 
     this->board[x][y] = -1;  // remove temporarily stone
+
+    // adjust score for edge
+    if (x == 0 || y == 0 || x == size - 1 || y == size - 1) {
+        score *= 0.95;
+    } else if (x == 1 || y == 1 || x == size - 2 || y == size - 2) {
+        score *= 0.9;
+    }
+
     if (color == BLACK) {
         this->black_score[x][y] = score;
     } else {
@@ -136,7 +144,7 @@ bool Evaluator::isPointInLine(int point, vector<int> arr) {
     int x1 = floor(point / this->size), y1 = point % this->size;
     for (auto x : arr) {
         int x2 = floor(x / this->size), y2 = x % this->size;
-        if ((x1 == x2 && abs(y1 - y1) < inline_distance) ||
+        if ((x1 == x2 && abs(y1 - y2) < inline_distance) ||
             (y1 == y2 && abs(x1 - x2) < inline_distance) ||
             (abs(x1 - x2) == abs(y1 - y2) && abs(x1 - x2) < inline_distance))
             return true;
@@ -146,11 +154,17 @@ bool Evaluator::isPointInLine(int point, vector<int> arr) {
 
 int Evaluator::getPatternCountOfPoint(int x, int y, Color color) {
     int cnt = 0;
-    for (int d = 0; d < 4; d++) {
-        if (this->pattern_cache[color][d][x][y] > Pattern::NONE) {
-            cnt++;
+    if (color == Color::EMPTY) {
+        for (int d = 0; d < 4; d++) {
+            if (this->pattern_cache[0][d][x][y] > Pattern::NONE) cnt++;
+            if (this->pattern_cache[1][d][x][y] > Pattern::NONE) cnt++;
+        }
+    } else {
+        for (int d = 0; d < 4; d++) {
+            if (this->pattern_cache[color][d][x][y] > Pattern::NONE) cnt++;
         }
     }
+
     return cnt;
 }
 
@@ -183,7 +197,7 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                     if (vcf) {
                         if (c == first && !isFour(p) && !isFive(p)) {
                             continue;
-                        } else if (c == ~first && !(p == FIVE || p == BLOCK_FIVE)) {
+                        } else if (c == ~first && isFive(p)) {
                             continue;
                         }
                     }
@@ -193,8 +207,8 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                         if (depth % 2 == 0) {
                             if (depth == 0 && c != first) continue;  // only attack
                             if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
-                            if (p != Pattern::THREE && c != first) continue;
-                            if (depth != 0 && c != first) continue;
+                            if (p == Pattern::THREE && c != first) continue;
+                            if (depth == 0 && c != first) continue;
                             if (depth > 0 && (p == Pattern::THREE || p == Pattern::BLOCK_FOUR) &&
                                 getPatternCountOfPoint(x, y, c) == 1)
                                 continue;
@@ -203,7 +217,7 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                             if (p == Pattern::THREE && c == ~first) continue;
                             if (depth > 1) {
                                 if (p == Pattern::BLOCK_FOUR &&
-                                    getPatternCountOfPoint(x, y, c) == 1)
+                                    getPatternCountOfPoint(x, y, Color::EMPTY) == 1)
                                     continue;
                                 if (p == Pattern::BLOCK_FOUR && !isPointInLine(point, last_points))
                                     continue;
@@ -242,77 +256,95 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
     return points;
 }
 
-unordered_set<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
+vector<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
     auto points = getPoints(color, depth, vct, vcf);
 
-    auto& fours = points[Pattern::FOUR];
-    auto& block_fours = points[Pattern::BLOCK_FOUR];
-    if (fours.size()) {
-        fours.merge(block_fours);
-        return fours;
-    }
-    auto& four_fours = points[Pattern::FOUR_FOUR];
-    if (four_fours.size()) {
-        four_fours.merge(block_fours);
-        return four_fours;
+    auto fives = points[Pattern::FIVE];
+    auto block_fives = points[Pattern::BLOCK_FIVE];
+    if (fives.size() || block_fives.size()) {
+        fives.merge(block_fives);
+        return {fives.begin(), fives.end()};
     }
 
-    auto& four_threes = points[Pattern::FOUR_THREE];
-    auto& threes = points[Pattern::THREE];
-    if (four_threes.size()) {
-        four_threes.merge(threes);
-        return four_threes;
+    auto fours = points[Pattern::FOUR];
+    auto block_fours = points[Pattern::BLOCK_FOUR];
+    if (vcf || fours.size()) {
+        fours.merge(block_fours);
+        return {fours.begin(), fours.end()};
     }
-    auto& three_threes = points[Pattern::THREE_THREE];
+    auto four_fours = points[Pattern::FOUR_FOUR];
+    if (four_fours.size()) {
+        four_fours.merge(block_fours);
+        return {four_fours.begin(), four_fours.end()};
+    }
+
+    auto four_threes = points[Pattern::FOUR_THREE];
+    auto threes = points[Pattern::THREE];
+    if (four_threes.size()) {
+        four_threes.merge(block_fours);
+        four_threes.merge(threes);
+        return {four_threes.begin(), four_threes.end()};
+    }
+    auto three_threes = points[Pattern::THREE_THREE];
     if (three_threes.size()) {
+        three_threes.merge(block_fours);
         three_threes.merge(threes);
-        return three_threes;
+        return {three_threes.begin(), three_threes.end()};
     }
 
     unordered_set<int> others;
+    vector<int> res;
     auto it = block_fours.begin();
     while (others.size() < 20 && it != block_fours.end()) {
-        others.insert(*it);
+        if (others.find(*it) == others.end()) {
+            others.insert(*it);
+            res.push_back(*it);
+        }
         it++;
     }
-    if (others.size() >= 20) return others;
-
-    it = three_threes.begin();
-    while (others.size() < 20 && it != three_threes.end()) {
-        others.insert(*it);
-        it++;
-    }
-    if (others.size() >= 20) return others;
+    if (others.size() >= 20) return res;
 
     it = threes.begin();
     while (others.size() < 20 && it != threes.end()) {
-        others.insert(*it);
+        if (others.find(*it) == others.end()) {
+            others.insert(*it);
+            res.push_back(*it);
+        }
         it++;
     }
-    if (others.size() >= 20) return others;
+    if (others.size() >= 20) return res;
 
-    auto& block_threes = points[Pattern::BLOCK_THREE];
+    auto block_threes = points[Pattern::BLOCK_THREE];
     it = block_threes.begin();
     while (others.size() < 20 && it != block_threes.end()) {
-        others.insert(*it);
+        if (others.find(*it) == others.end()) {
+            others.insert(*it);
+            res.push_back(*it);
+        }
         it++;
     }
-    if (others.size() >= 20) return others;
+    if (others.size() >= 20) return res;
 
-    auto& two_twos = points[Pattern::TWO_TWO];
+    auto two_twos = points[Pattern::TWO_TWO];
     it = two_twos.begin();
     while (others.size() < 20 && it != two_twos.end()) {
-        others.insert(*it);
+        if (others.find(*it) == others.end()) {
+            others.insert(*it);
+            res.push_back(*it);
+        }
         it++;
     }
-    if (others.size() >= 20) return others;
+    if (others.size() >= 20) return res;
 
-    auto& two = points[Pattern::TWO];
+    auto two = points[Pattern::TWO];
     it = two.begin();
-    while (others.size() < 20 && it != two.end()) {
-        others.insert(*it);
+    while (others.size() < 25 && it != two.end()) {
+        if (others.find(*it) == others.end()) {
+            others.insert(*it);
+            res.push_back(*it);
+        }
         it++;
     }
-    // cout << others.size() << "\n";
-    return others;
+
+    return res;
 }

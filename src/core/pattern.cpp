@@ -36,12 +36,12 @@ tuple<int, int, int, int, int, int> countPattern(const vector<vector<short>>& bo
             } else if (inner_empty_cnt == 1) {
                 one_empty_self_cnt++;
             }
-        } else if (current_color == Color::EMPTY) {
+        }
+        total_length++;
+        if (current_color == Color::EMPTY) {
             temp_empty_cnt++;
             side_empty_cnt++;
         }
-        total_length++;
-
         if (side_empty_cnt >= 2) break;
     }
 
@@ -53,12 +53,12 @@ tuple<int, int, int, int, int, int> countPattern(const vector<vector<short>>& bo
 Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, int offset_x,
                    int offset_y, Color color) {
     // skip empty point
-    if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
-        board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
-        board[x + 2 * offset_x][y + 2 * offset_y] == -1 &&
-        board[x - 2 * offset_x][y - 2 * offset_y] == -1) {
-        return Pattern::NONE;
-    }
+    // if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
+    //     board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
+    //     board[x + 2 * offset_x][y + 2 * offset_y] == -1 &&
+    //     board[x - 2 * offset_x][y - 2 * offset_y] == -1) {
+    //     return Pattern::NONE;
+    // }
 
     auto [pos_inner_empty, pos_total_len, pos_side_empty, pos_self, pos_no_empty_self,
           pos_one_empty_self] = countPattern(board, x, y, offset_x, offset_y, color);
@@ -88,7 +88,7 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
         if ((pos_empty >= 1 || pos_one_empty_self > pos_no_empty_self) &&
             (neg_empty >= 1 || neg_one_empty_self > neg_no_empty_self)) {
             return Pattern::FOUR;
-        } else if (pos_empty != 0 || neg_empty != 0) {
+        } else if (!(pos_empty == 0 && neg_empty == 0)) {
             return Pattern::BLOCK_FOUR;
         }
     }
@@ -124,6 +124,8 @@ int getPatternScore(Pattern pattern) {
     switch (pattern) {
         case Pattern::FIVE:
             return 100000;  // FOUR
+        case Pattern::THREE_THREE:
+            return 5000;  // FOUR / 20
         case Pattern::BLOCK_FIVE:
             return 1500;  // BLOCK_FOUR
         case Pattern::FOUR:
@@ -133,7 +135,6 @@ int getPatternScore(Pattern pattern) {
         case Pattern::BLOCK_FOUR:
             return 150;  // BLOCK_THREE
         case Pattern::THREE:
-        case Pattern::THREE_THREE:
             return 100;  // TWO
         case Pattern::TWO_TWO:
             return 20;

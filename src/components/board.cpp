@@ -177,7 +177,8 @@ Points Board::getValuableMoves(Color color, int depth, bool vct, bool vcf) {
             return get<1>(cache);
         }
     }
-    unordered_set<int> moves = this->evaluator.getMoves(color, depth, vct, vcf);
+
+    vector<int> moves = this->evaluator.getMoves(color, depth, vct, vcf);
     Points points = Points();
     for (auto move : moves) points.push_back({move / this->size, move % this->size});
 
