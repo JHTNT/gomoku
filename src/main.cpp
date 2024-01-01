@@ -73,15 +73,17 @@ int main() {
     }
 
     Board board(size, ~player_color);
-    board.printBoard();
 
     int row, col, row_input;
     string col_input;
     bool ai_first_stone = false;
-    if (player_color == Color::WHITE)
+    if (player_color == Color::WHITE) {
         aiPlay(board, board.ai_color, 4);
-    else
+    } else {
         ai_first_stone = true;
+        board.printBoard();
+    }
+
     while (true) {
         cout << "Enter move[row (1 ~ 15) column (A ~ O)]: ";
         cin >> row_input >> col_input;
