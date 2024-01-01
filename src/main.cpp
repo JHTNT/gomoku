@@ -96,6 +96,9 @@ int main() {
             cout << "Invalid move\n";
             continue;
         }
+
+        if (board.isGameOver()) break;
+
         board.cnt = 0;
         s = clock();
         if (ai_first_stone) {
@@ -107,5 +110,16 @@ int main() {
         e = clock();
         cout << board.cnt << "\n";
         cout << (double) (e - s) / CLOCKS_PER_SEC << " s\n";
+
+        if (board.isGameOver()) break;
+    }
+
+    Color winner = board.getWinner();
+    if (winner == Color::BLACK) {
+        cout << "Black wins!\n";
+    } else if (winner == Color::WHITE) {
+        cout << "White wins!\n";
+    } else {
+        cout << "Draw!\n";
     }
 }
