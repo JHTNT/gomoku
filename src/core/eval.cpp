@@ -127,9 +127,9 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
 
     // adjust score for edge
     if (x == 0 || y == 0 || x == size - 1 || y == size - 1) {
-        score *= 0.95;
-    } else if (x == 1 || y == 1 || x == size - 2 || y == size - 2) {
         score *= 0.9;
+    } else if (x == 1 || y == 1 || x == size - 2 || y == size - 2) {
+        score *= 0.95;
     }
 
     if (color == BLACK) {
