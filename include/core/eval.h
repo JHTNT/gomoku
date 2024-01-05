@@ -11,13 +11,13 @@ class Evaluator {
     std::vector<std::vector<short>> board;
     std::vector<std::vector<short>> black_score;
     std::vector<std::vector<short>> white_score;
-    // pattern_cache[color][direction][row][col];
-    std::vector<std::vector<std::vector<std::vector<short>>>> pattern_cache;
     // vertical, horizontal, diag (\), diag (/)
     std::vector<std::pair<int, Color>> history;
 
    public:
     const Points all_directions = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
+    // pattern_cache[color][direction][row][col];
+    std::vector<std::vector<std::vector<std::vector<short>>>> pattern_cache;
 
     Evaluator(int n);
     int evaluate(Color color);

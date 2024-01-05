@@ -19,6 +19,22 @@ Color Board::getWinner() {
         return this->winner_cache.get(hash);
     }
 
+    else if (this->history.size() != 0) {
+        auto [last_x, last_y, last_color] = this->history.back();
+        if (last_color == Color::BLACK) {
+            int p_cnt[Pattern::FIVE + 1] = {0};
+            for (int d = 0; d < 4; d++) {
+                Pattern p = Pattern(this->evaluator.pattern_cache[last_color][d][last_x][last_y]);
+                if (p > Pattern::DEAD) p_cnt[p]++;
+            }
+
+            if (((p_cnt[Pattern::OVER_LINE] >= 1) ||
+                 (p_cnt[Pattern::FOUR] + p_cnt[Pattern::BLOCK_FOUR] >= 2) ||
+                 (p_cnt[Pattern::THREE] + p_cnt[Pattern::THREE_S] >= 2)))
+                return Color::WHITE;
+        }
+    }
+
     for (int x = 0; x < this->size; x++) {
         for (int y = 0; y < this->size; y++) {
             if (this->board[x][y] == Color::EMPTY) continue;
