@@ -52,13 +52,15 @@ tuple<int, int, int, int, int, int> countPattern(const vector<vector<short>>& bo
 
 Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, int offset_x,
                    int offset_y, Color color) {
+    // pattern source: https://587.renju.org.tw/teach/teach029.htm
+
     // skip empty point
-    // if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
-    //     board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
-    //     board[x + 2 * offset_x][y + 2 * offset_y] == -1 &&
-    //     board[x - 2 * offset_x][y - 2 * offset_y] == -1) {
-    //     return Pattern::NONE;
-    // }
+    if (x > 1 && x < board.size() - 2 && y > 1 && y < board.size() - 2 &&
+        board[x + offset_x][y + offset_y] == -1 && board[x - offset_x][y - offset_y] == -1 &&
+        board[x + 2 * offset_x][y + 2 * offset_y] == -1 &&
+        board[x - 2 * offset_x][y - 2 * offset_y] == -1) {
+        return Pattern::ONE;
+    }
 
     auto [pos_inner_empty, pos_total_len, pos_side_empty, pos_self, pos_no_empty_self,
           pos_one_empty_self] = countPattern(board, x, y, offset_x, offset_y, color);
@@ -84,52 +86,54 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
 
     // four
     if (no_empty_self_cnt == 4) {
-        if ((pos_empty >= 1 || pos_one_empty_self > pos_no_empty_self) &&
-            (neg_empty >= 1 || neg_one_empty_self > neg_no_empty_self)) {
-            return Pattern::FOUR;
-        } else if (pos_empty != 0 && neg_empty != 0) {
-            return Pattern::BLOCK_FOUR;
-        }
-    }
-    if (one_empty_self_cnt == 4) {
-        return Pattern::BLOCK_FOUR;
+        if (pos_empty >= 1 && neg_empty >= 1)
+            return Pattern::FOUR;  // .OOOO.
+        else
+            return Pattern::BLOCK_FOUR;  // XOOOO.
+    } else if (one_empty_self_cnt == 4) {
+        return Pattern::BLOCK_FOUR;  // OOO.O or OO.OO
     }
 
     // three
     if (no_empty_self_cnt == 3) {
         if ((pos_empty >= 1 && neg_empty >= 2) || (pos_empty >= 2 && neg_empty >= 1)) {
-            return Pattern::THREE_S;
-        } else if (pos_empty != 0 || neg_empty != 0) {
-            return Pattern::BLOCK_THREE;
+            return Pattern::THREE_S;  // _.OOO_ or _OOO._
+        } else {
+            return Pattern::BLOCK_THREE;  // XOOO.._ or X.OOO.X
         }
     } else if (one_empty_self_cnt == 3) {
         if (pos_empty >= 1 && neg_empty >= 1) {
-            return Pattern::THREE;
+            return Pattern::THREE;  // _OO.O_
         } else {
-            return Pattern::BLOCK_THREE;
+            return Pattern::BLOCK_THREE;  // XOO.O._ or XO.OO._
         }
+    } else if (pos_one_empty_self == 1 && neg_one_empty_self == 1) {
+        return Pattern::BLOCK_THREE;  // _O.O.O_
+    } else if (self_cnt == 3 && pos_inner_empty + neg_inner_empty == 2) {
+        return Pattern::BLOCK_THREE;  // _O.O.O_ or _OO..O_
     }
 
     // two
     if (no_empty_self_cnt == 2) {
-        if (pos_empty >= 1 && neg_empty >= 1) {
-            return Pattern::TWO_B;
-        } else {
-            return Pattern::BLOCK_TWO;
-        }
+        if (pos_empty >= 2 && neg_empty >= 2)
+            return Pattern::TWO_B;  // _..OO.._
+        else
+            return Pattern::BLOCK_TWO;  // XOO..._ or X.OO..X
     } else if (one_empty_self_cnt == 2) {
-        if (pos_empty == 0 && neg_empty == 0) {
-            return Pattern::BLOCK_TWO;
-        } else if (pos_inner_empty + neg_inner_empty == 1) {
-            return Pattern::TWO_A;
-        } else if (pos_inner_empty + neg_inner_empty == 2) {
-            return Pattern::TWO;
-        }
+        if (pos_empty >= 1 && neg_empty >= 1)
+            return Pattern::TWO_A;  // _.O.O._
+        else
+            return Pattern::BLOCK_TWO;  // XO.O.._ or X.O.O.X
+    } else if (self_cnt == 2 && pos_inner_empty + neg_inner_empty == 2) {
+        if (pos_empty >= 1 && neg_empty >= 1)
+            return Pattern::TWO;  // _O..O_
+        else
+            return Pattern::BLOCK_TWO;  // XO..O._
     }
 
     // one
     if (no_empty_self_cnt == 1) {
-        if (pos_empty >= 1 && neg_empty >= 1) {
+        if (pos_empty >= 3 && neg_empty >= 3) {
             return Pattern::ONE;
         } else {
             return Pattern::BLOCK_ONE;
@@ -155,17 +159,19 @@ int getPatternScore(Pattern4 pattern) {
         case Pattern4::FLEX3_2X:
             return 90;
         case Pattern4::FLEX3_PLUS:
+            return 70;
         case Pattern4::FLEX3:
+            return 65;
         case Pattern4::BLOCK3_PLUS:
             return 60;
         case Pattern4::FLEX2_2X:
-            return 20;
+            return 30;
         case Pattern4::BLOCK3:
-            return 10;
+            return 20;
         case Pattern4::FLEX2:
-            return 0;
+            return 10;
         case Pattern4::FORBIDDEN:
-            return -10;
+            return -10000;
         default:
             return 0;
     }

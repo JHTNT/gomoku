@@ -91,7 +91,7 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
         pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = Pattern::DEAD;
     }
 
-    int score = 0, block_four_cnt = 0, three_cnt = 0, two_cnt = 0;
+    int score = 0;
     int p_cnt[Pattern::FIVE + 1] = {0};
     for (int d = 0; d < 4; d++) {
         Pattern p = Pattern(pattern_cache[color][d][x][y]);
@@ -107,9 +107,11 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
     // complex pattern
     Pattern4 p4 = Pattern4::NONE;
 
-    if (color == BLACK && ((p_cnt[Pattern::OVER_LINE] >= 1) ||
-                             (p_cnt[Pattern::FOUR] + p_cnt[Pattern::BLOCK_FOUR] >= 2) ||
-                             (p_cnt[Pattern::THREE] + p_cnt[Pattern::THREE_S] >= 2)))
+    if (p_cnt[Pattern::FIVE] >= 1)
+        p4 = Pattern4::A_FIVE;
+    else if (color == BLACK && ((p_cnt[Pattern::OVER_LINE] >= 1) ||
+                                (p_cnt[Pattern::FOUR] + p_cnt[Pattern::BLOCK_FOUR] >= 2) ||
+                                (p_cnt[Pattern::THREE] + p_cnt[Pattern::THREE_S] >= 2)))
         p4 = Pattern4::FORBIDDEN;
     else if (p_cnt[Pattern::BLOCK_FOUR] >= 2 || p_cnt[FOUR] >= 1)
         p4 = Pattern4::FLEX4;
@@ -191,7 +193,7 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                                                             bool vcf) {
     Color first = depth % 2 ? ~color : color;  // if depth is even, set first as self color
     unordered_map<int, unordered_set<int>> points;
-    // TODO 加所有 pattern
+
     for (int pattern : {DEAD, OVER_LINE, BLOCK_ONE, ONE, BLOCK_TWO, TWO, TWO_A, TWO_B, BLOCK_THREE,
                         THREE, THREE_S, BLOCK_FOUR, FOUR, Pattern::FIVE}) {
         points[pattern] = unordered_set<int>();
