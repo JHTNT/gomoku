@@ -9,7 +9,7 @@ std::tuple<int, int, int, int, int, int> countPattern(const std::vector<std::vec
                                                       Color color);
 Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, int offset_x,
                    int offset_y, Color color);
-int getPatternScore(Pattern pattern);
+int getPatternScore(Pattern4 pattern);
 inline bool isFour(Pattern pattern) { return (pattern == FOUR || pattern == BLOCK_FOUR); }
-inline bool isFive(Pattern pattern) { return (pattern == FIVE || pattern == BLOCK_FIVE); }
+inline bool isFive(Pattern pattern) { return pattern == FIVE; }
 #endif

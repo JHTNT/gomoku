@@ -72,15 +72,14 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
         max(pos_one_empty_self + neg_no_empty_self, pos_no_empty_self + neg_one_empty_self) + 1;
     int pos_empty = pos_side_empty, neg_empty = neg_side_empty;
 
-    if (total_length < 5) return Pattern::NONE;  // can't form any pattern
+    if (total_length < 5) return Pattern::DEAD;  // can't form any pattern
+
+    // forbidden pattern
+    if (no_empty_self_cnt > 5 && color == Color::BLACK) return Pattern::OVER_LINE;
 
     // five
     if (no_empty_self_cnt >= 5) {
-        if (pos_empty > 0 && neg_empty > 0) {
-            return Pattern::FIVE;
-        } else {
-            return Pattern::BLOCK_FIVE;
-        }
+        return Pattern::FIVE;
     }
 
     // four
@@ -88,7 +87,7 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
         if ((pos_empty >= 1 || pos_one_empty_self > pos_no_empty_self) &&
             (neg_empty >= 1 || neg_one_empty_self > neg_no_empty_self)) {
             return Pattern::FOUR;
-        } else if (!(pos_empty == 0 && neg_empty == 0)) {
+        } else if (pos_empty != 0 && neg_empty != 0) {
             return Pattern::BLOCK_FOUR;
         }
     }
@@ -99,7 +98,7 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
     // three
     if (no_empty_self_cnt == 3) {
         if ((pos_empty >= 1 && neg_empty >= 2) || (pos_empty >= 2 && neg_empty >= 1)) {
-            return Pattern::THREE;
+            return Pattern::THREE_S;
         } else if (pos_empty != 0 || neg_empty != 0) {
             return Pattern::BLOCK_THREE;
         }
@@ -112,36 +111,61 @@ Pattern getPattern(const std::vector<std::vector<short>>& board, int x, int y, i
     }
 
     // two
-    if ((no_empty_self_cnt == 2 || one_empty_self_cnt == 2) && total_length > 5) {
-        return Pattern::TWO;
+    if (no_empty_self_cnt == 2) {
+        if (pos_empty >= 1 && neg_empty >= 1) {
+            return Pattern::TWO_B;
+        } else {
+            return Pattern::BLOCK_TWO;
+        }
+    } else if (one_empty_self_cnt == 2) {
+        if (pos_empty == 0 && neg_empty == 0) {
+            return Pattern::BLOCK_TWO;
+        } else if (pos_inner_empty + neg_inner_empty == 1) {
+            return Pattern::TWO_A;
+        } else if (pos_inner_empty + neg_inner_empty == 2) {
+            return Pattern::TWO;
+        }
     }
 
-    return Pattern::NONE;
+    // one
+    if (no_empty_self_cnt == 1) {
+        if (pos_empty >= 1 && neg_empty >= 1) {
+            return Pattern::ONE;
+        } else {
+            return Pattern::BLOCK_ONE;
+        }
+    }
+
+    return Pattern::DEAD;
 }
 
 // get the score before putting this stone
-int getPatternScore(Pattern pattern) {
+int getPatternScore(Pattern4 pattern) {
     switch (pattern) {
-        case Pattern::FIVE:
-            return 100000;  // FOUR
-        case Pattern::THREE_THREE:
-            return 5000;  // FOUR / 20
-        case Pattern::BLOCK_FIVE:
-            return 1500;  // BLOCK_FOUR
-        case Pattern::FOUR:
-        case Pattern::FOUR_FOUR:
-        case Pattern::FOUR_THREE:
-            return 1000;  // THREE
-        case Pattern::BLOCK_FOUR:
-            return 150;  // BLOCK_THREE
-        case Pattern::THREE:
-            return 100;  // TWO
-        case Pattern::TWO_TWO:
+        case Pattern4::A_FIVE:
+            return 5000;
+        case Pattern4::FLEX4:
+            return 1000;
+        case Pattern4::BLOCK4_FLEX3:
+            return 300;
+        case Pattern4::BLOCK4_PLUS:
+            return 200;
+        case Pattern4::BLOCK4:
+            return 160;
+        case Pattern4::FLEX3_2X:
+            return 90;
+        case Pattern4::FLEX3_PLUS:
+        case Pattern4::FLEX3:
+        case Pattern4::BLOCK3_PLUS:
+            return 60;
+        case Pattern4::FLEX2_2X:
             return 20;
-        case Pattern::BLOCK_THREE:
-            return 15;  // BLOCK_TWO
-        case Pattern::TWO:
-            return 10;  // ONE
+        case Pattern4::BLOCK3:
+            return 10;
+        case Pattern4::FLEX2:
+            return 0;
+        case Pattern4::FORBIDDEN:
+            return -10;
         default:
             return 0;
     }

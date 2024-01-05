@@ -10,17 +10,37 @@ enum Color { BLACK, WHITE, EMPTY = -1 };
 constexpr Color operator~(Color c) { return Color(c ^ 1); }
 
 enum Pattern {
-    FIVE = 5,
-    BLOCK_FIVE = 50,
-    FOUR = 4,
-    FOUR_FOUR = 44,    // 雙沖四
-    FOUR_THREE = 43,   // 沖四活三
-    THREE_THREE = 33,  // 雙三
-    BLOCK_FOUR = 40,
-    THREE = 3,
-    BLOCK_THREE = 30,
-    TWO_TWO = 22,  // 雙活二
-    TWO = 2,
-    NONE = 0,
+    DEAD,
+    OVER_LINE,
+    BLOCK_ONE,
+    ONE,
+    BLOCK_TWO,
+    TWO,    // _O__._
+    TWO_A,  // _O_.__
+    TWO_B,  // _O.___
+    BLOCK_THREE,
+    THREE,    // _OO_._
+    THREE_S,  // __OO.__
+    BLOCK_FOUR,
+    FOUR,
+    FIVE
+};
+
+// pattern combined by 4 directions
+enum Pattern4 {
+    NONE,
+    FORBIDDEN,
+    FLEX2,
+    BLOCK3,
+    FLEX2_2X,
+    BLOCK3_PLUS,
+    FLEX3,
+    FLEX3_PLUS,
+    FLEX3_2X,
+    BLOCK4,
+    BLOCK4_PLUS,
+    BLOCK4_FLEX3,
+    FLEX4,
+    A_FIVE
 };
 #endif

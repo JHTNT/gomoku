@@ -88,49 +88,68 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
     this->board[x][y] = color;  // put temporarily stone
 
     for (auto d : directions) {
-        pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = Pattern::NONE;
+        pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = Pattern::DEAD;
     }
 
     int score = 0, block_four_cnt = 0, three_cnt = 0, two_cnt = 0;
+    int p_cnt[Pattern::FIVE + 1] = {0};
     for (int d = 0; d < 4; d++) {
         Pattern p = Pattern(pattern_cache[color][d][x][y]);
-        if (p > Pattern::NONE) {
-            score += getPatternScore(p);
-            if (p == Pattern::BLOCK_FOUR) block_four_cnt++;
-            if (p == Pattern::THREE) three_cnt++;
-            if (p == Pattern::TWO) two_cnt++;
-        }
+        if (p > Pattern::DEAD) p_cnt[p]++;
     }
 
     for (auto d : directions) {
         Pattern p = getPattern(board, x, y, d.first, d.second, color);
-        if (p == Pattern::NONE) continue;
-
         pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = p;
-        if (p == Pattern::BLOCK_FOUR) block_four_cnt++;
-        if (p == Pattern::THREE) three_cnt++;
-        if (p == Pattern::TWO) two_cnt++;
-        // combine multiple patterns to a complex pattern
-        if (block_four_cnt >= 2) {
-            p = Pattern::FOUR_FOUR;
-        } else if (block_four_cnt && three_cnt) {
-            p = Pattern::FOUR_THREE;
-        } else if (three_cnt >= 2) {
-            p = Pattern::THREE_THREE;
-        } else if (two_cnt >= 2) {
-            p = Pattern::TWO_TWO;
-        }
-        score += getPatternScore(p);
+        p_cnt[p]++;
     }
+
+    // complex pattern
+    Pattern4 p4 = Pattern4::NONE;
+
+    if (color == BLACK && ((p_cnt[Pattern::OVER_LINE] >= 1) ||
+                             (p_cnt[Pattern::FOUR] + p_cnt[Pattern::BLOCK_FOUR] >= 2) ||
+                             (p_cnt[Pattern::THREE] + p_cnt[Pattern::THREE_S] >= 2)))
+        p4 = Pattern4::FORBIDDEN;
+    else if (p_cnt[Pattern::BLOCK_FOUR] >= 2 || p_cnt[FOUR] >= 1)
+        p4 = Pattern4::FLEX4;
+    else if (p_cnt[Pattern::BLOCK_FOUR] >= 1) {
+        if (p_cnt[Pattern::THREE] >= 1 || p_cnt[Pattern::THREE_S] >= 1)
+            p4 = Pattern4::BLOCK4_FLEX3;
+        else if (p_cnt[Pattern::BLOCK_THREE] >= 1)
+            p4 = Pattern4::BLOCK4_PLUS;
+        else if (p_cnt[Pattern::TWO] + p_cnt[Pattern::TWO_A] + p_cnt[Pattern::TWO_B] >= 1)
+            p4 = Pattern4::BLOCK4_PLUS;
+        else
+            p4 = Pattern4::BLOCK4;
+    } else if (p_cnt[Pattern::THREE] >= 1 || p_cnt[Pattern::THREE_S] >= 1) {
+        if (p_cnt[Pattern::THREE] + p_cnt[Pattern::THREE_S] >= 2)
+            p4 = Pattern4::FLEX3_2X;
+        else if (p_cnt[Pattern::BLOCK_THREE] >= 1)
+            p4 = Pattern4::FLEX3_PLUS;
+        else if (p_cnt[Pattern::TWO] + p_cnt[Pattern::TWO_A] + p_cnt[Pattern::TWO_B] >= 1)
+            p4 = Pattern4::FLEX3_PLUS;
+        else
+            p4 = Pattern4::FLEX3;
+    } else if (p_cnt[Pattern::BLOCK_THREE] >= 1)
+        p4 = Pattern4::BLOCK3;
+    else if (p_cnt[Pattern::TWO] + p_cnt[Pattern::TWO_A] + p_cnt[Pattern::TWO_B] >= 2)
+        p4 = Pattern4::FLEX2_2X;
+    else if (p_cnt[Pattern::BLOCK_THREE])
+        p4 = Pattern4::BLOCK3;
+    else if (p_cnt[Pattern::TWO] + p_cnt[Pattern::TWO_A] + p_cnt[Pattern::TWO_B] >= 1)
+        p4 = Pattern4::FLEX2;
+
+    score = getPatternScore(p4);
 
     this->board[x][y] = -1;  // remove temporarily stone
 
     // adjust score for edge
-    if (x == 0 || y == 0 || x == size - 1 || y == size - 1) {
-        score *= 0.9;
-    } else if (x == 1 || y == 1 || x == size - 2 || y == size - 2) {
-        score *= 0.95;
-    }
+    // if (x == 0 || y == 0 || x == size - 1 || y == size - 1) {
+    //     score *= 0.9;
+    // } else if (x == 1 || y == 1 || x == size - 2 || y == size - 2) {
+    //     score *= 0.95;
+    // }
 
     if (color == BLACK) {
         this->black_score[x][y] = score;
@@ -156,12 +175,12 @@ int Evaluator::getPatternCountOfPoint(int x, int y, Color color) {
     int cnt = 0;
     if (color == Color::EMPTY) {
         for (int d = 0; d < 4; d++) {
-            if (this->pattern_cache[0][d][x][y] > Pattern::NONE) cnt++;
-            if (this->pattern_cache[1][d][x][y] > Pattern::NONE) cnt++;
+            if (this->pattern_cache[0][d][x][y] > Pattern::DEAD) cnt++;
+            if (this->pattern_cache[1][d][x][y] > Pattern::DEAD) cnt++;
         }
     } else {
         for (int d = 0; d < 4; d++) {
-            if (this->pattern_cache[color][d][x][y] > Pattern::NONE) cnt++;
+            if (this->pattern_cache[color][d][x][y] > Pattern::DEAD) cnt++;
         }
     }
 
@@ -172,8 +191,9 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                                                             bool vcf) {
     Color first = depth % 2 ? ~color : color;  // if depth is even, set first as self color
     unordered_map<int, unordered_set<int>> points;
-    for (int pattern : {FIVE, BLOCK_FIVE, FOUR, FOUR_FOUR, FOUR_THREE, THREE_THREE, BLOCK_FOUR,
-                        THREE, BLOCK_THREE, TWO_TWO, TWO, NONE}) {
+    // TODO 加所有 pattern
+    for (int pattern : {DEAD, OVER_LINE, BLOCK_ONE, ONE, BLOCK_TWO, TWO, TWO_A, TWO_B, BLOCK_THREE,
+                        THREE, THREE_S, BLOCK_FOUR, FOUR, Pattern::FIVE}) {
         points[pattern] = unordered_set<int>();
     }
 
@@ -190,7 +210,7 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                 for (int direction = 0; direction < 4; direction++) {
                     if (this->board[x][y] != -1) continue;  // already put stone
                     Pattern p = Pattern(this->pattern_cache[c][direction][x][y]);
-                    if (p == Pattern::NONE) continue;
+                    if (p == Pattern::DEAD) continue;
 
                     int point = x * this->size + y;
 
@@ -206,14 +226,14 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
                         // only consider self turn
                         if (depth % 2 == 0) {
                             if (depth == 0 && c != first) continue;  // only attack
-                            if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
-                            if (p == Pattern::THREE && c != first) continue;
+                            if (p != THREE && p != THREE_S && !isFour(p) && !isFive(p)) continue;
+                            if ((p == THREE || p == THREE_S) && c != first) continue;
                             if (depth == 0 && c != first) continue;
-                            if (depth > 0 && (p == Pattern::THREE || p == Pattern::BLOCK_FOUR) &&
+                            if (depth > 0 && (p == THREE || p == THREE_S || p == BLOCK_FOUR) &&
                                 getPatternCountOfPoint(x, y, c) == 1)
                                 continue;
                         } else {  // only consider defence
-                            if (p != Pattern::THREE && !isFour(p) && !isFive(p)) continue;
+                            if (p != THREE && p != THREE_S && !isFour(p) && !isFive(p)) continue;
                             if (p == Pattern::THREE && c == ~first) continue;
                             if (depth > 1) {
                                 if (p == Pattern::BLOCK_FOUR &&
@@ -229,26 +249,13 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
 
                     // ignore pattern value less than THREE when depth >= 3
                     if (depth > 2 &&
-                        (p == Pattern::TWO || p == Pattern::TWO_TWO || p == Pattern::BLOCK_THREE) &&
+                        (p == Pattern::TWO || p == Pattern::TWO_A || p == Pattern::TWO_B ||
+                         p == Pattern::BLOCK_THREE) &&
                         !isPointInLine(point, last_points)) {
                         continue;
                     }
 
                     points[p].insert(point);
-                    if (p == Pattern::FOUR)
-                        four_cnt++;
-                    else if (p == Pattern::BLOCK_FOUR)
-                        block_four_cnt++;
-                    else if (p == Pattern::THREE)
-                        three_cnt++;
-
-                    // union pattern
-                    if (four_cnt >= 2)
-                        points[Pattern::FOUR_FOUR].insert(point);
-                    else if (block_four_cnt && three_cnt)
-                        points[Pattern::FOUR_THREE].insert(point);
-                    else if (three_cnt >= 2)
-                        points[Pattern::THREE_THREE].insert(point);
                 }
             }
         }
@@ -260,91 +267,20 @@ vector<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
     auto points = getPoints(color, depth, vct, vcf);
 
     auto fives = points[Pattern::FIVE];
-    auto block_fives = points[Pattern::BLOCK_FIVE];
-    if (fives.size() || block_fives.size()) {
-        fives.merge(block_fives);
-        return {fives.begin(), fives.end()};
-    }
-
-    auto fours = points[Pattern::FOUR];
-    auto block_fours = points[Pattern::BLOCK_FOUR];
-    if (vcf || fours.size()) {
-        fours.merge(block_fours);
-        return {fours.begin(), fours.end()};
-    }
-    auto four_fours = points[Pattern::FOUR_FOUR];
-    if (four_fours.size()) {
-        four_fours.merge(block_fours);
-        return {four_fours.begin(), four_fours.end()};
-    }
-
-    auto four_threes = points[Pattern::FOUR_THREE];
-    auto threes = points[Pattern::THREE];
-    if (four_threes.size()) {
-        four_threes.merge(block_fours);
-        four_threes.merge(threes);
-        return {four_threes.begin(), four_threes.end()};
-    }
-    auto three_threes = points[Pattern::THREE_THREE];
-    if (three_threes.size()) {
-        three_threes.merge(block_fours);
-        three_threes.merge(threes);
-        return {three_threes.begin(), three_threes.end()};
-    }
+    if (fives.size()) return {fives.begin(), fives.end()};
 
     unordered_set<int> others;
     vector<int> res;
-    auto it = block_fours.begin();
-    while (others.size() < 20 && it != block_fours.end()) {
-        if (others.find(*it) == others.end()) {
-            others.insert(*it);
-            res.push_back(*it);
+    for (int i = FOUR; i >= TWO; i--) {
+        auto it = points[i].begin();
+        while (others.size() < 25 && it != points[i].end()) {
+            if (others.find(*it) == others.end()) {
+                others.insert(*it);
+                res.push_back(*it);
+            }
+            it++;
         }
-        it++;
+        if (others.size() >= 25) return res;
     }
-    if (others.size() >= 20) return res;
-
-    it = threes.begin();
-    while (others.size() < 20 && it != threes.end()) {
-        if (others.find(*it) == others.end()) {
-            others.insert(*it);
-            res.push_back(*it);
-        }
-        it++;
-    }
-    if (others.size() >= 20) return res;
-
-    auto block_threes = points[Pattern::BLOCK_THREE];
-    it = block_threes.begin();
-    while (others.size() < 20 && it != block_threes.end()) {
-        if (others.find(*it) == others.end()) {
-            others.insert(*it);
-            res.push_back(*it);
-        }
-        it++;
-    }
-    if (others.size() >= 20) return res;
-
-    auto two_twos = points[Pattern::TWO_TWO];
-    it = two_twos.begin();
-    while (others.size() < 20 && it != two_twos.end()) {
-        if (others.find(*it) == others.end()) {
-            others.insert(*it);
-            res.push_back(*it);
-        }
-        it++;
-    }
-    if (others.size() >= 20) return res;
-
-    auto two = points[Pattern::TWO];
-    it = two.begin();
-    while (others.size() < 25 && it != two.end()) {
-        if (others.find(*it) == others.end()) {
-            others.insert(*it);
-            res.push_back(*it);
-        }
-        it++;
-    }
-
     return res;
 }

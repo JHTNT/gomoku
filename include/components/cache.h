@@ -2,9 +2,10 @@
 #define CACHE
 #include <deque>
 #include <unordered_map>
+
 template <typename T>
 class Cache {
-    int capacity = 1000000;
+    int capacity = 2000000;
     std::deque<unsigned long long> cache;
     std::unordered_map<unsigned long long, T> cache_map;
 
