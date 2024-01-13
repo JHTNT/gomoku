@@ -19,7 +19,7 @@ Color Board::getWinner() {
         return this->winner_cache.get(hash);
     }
 
-    else if (this->history.size() != 0) {
+    if (this->history.size() != 0) {
         auto [last_x, last_y, last_color] = this->history.back();
         if (last_color == Color::BLACK) {
             int p_cnt[Pattern::FIVE + 1] = {0};

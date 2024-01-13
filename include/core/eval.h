@@ -13,6 +13,7 @@ class Evaluator {
     std::vector<std::vector<short>> white_score;
     // vertical, horizontal, diag (\), diag (/)
     std::vector<std::pair<int, Color>> history;
+    std::vector<std::vector<std::vector<short>>> pattern4_cache;
 
    public:
     const Points all_directions = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};

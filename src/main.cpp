@@ -11,18 +11,18 @@
 using namespace std;
 
 void aiPlay(Board& board, Color color, int depth) {
+    // auto [score, move, path] =
+    //     minimax(board, board.ai_color, depth + 8, 0, -MAX, MAX, Points{}, true, false);
+
+    // if (score >= 10000000) {
+    //     board.putStone(move, board.ai_color);
+    //     board.printBoard();
+    //     cout << "Score: " << score << ", Move: [" << (15 - move.first) << ", "
+    //          << (char) (move.second + 'A') << "]\n";
+    //     return;
+    // }
+
     auto [score, move, path] =
-        minimax(board, board.ai_color, depth + 8, 0, -MAX, MAX, Points{}, true, false);
-
-    if (score >= 10000000) {
-        board.putStone(move, board.ai_color);
-        board.printBoard();
-        cout << "Score: " << score << ", Move: [" << (15 - move.first) << ", "
-             << (char) (move.second + 'A') << "]\n";
-        return;
-    }
-
-    tie(score, move, path) =
         minimax(board, board.ai_color, depth, 0, -MAX, MAX, Points{}, false, false);
     board.putStone(move, board.ai_color);
     Board board2 = board.reverse();

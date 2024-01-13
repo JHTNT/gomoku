@@ -15,7 +15,9 @@ Evaluator::Evaluator(int n)
       black_score{vector<vector<short>>(n, vector<short>(n, 0))},
       white_score{vector<vector<short>>(n, vector<short>(n, 0))},
       pattern_cache{vector<vector<vector<vector<short>>>>(
-          2, vector<vector<vector<short>>>(4, vector<vector<short>>(n, vector<short>(n, 0))))} {}
+          2, vector<vector<vector<short>>>(4, vector<vector<short>>(n, vector<short>(n, 0))))},
+      pattern4_cache{
+          vector<vector<vector<short>>>(2, vector<vector<short>>(n, vector<short>(n, 0)))} {}
 
 int Evaluator::evaluate(Color color) {
     int black = 0, white = 0;
@@ -91,7 +93,6 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
         pattern_cache[color][directionToIndex(d.first, d.second)][x][y] = Pattern::DEAD;
     }
 
-    int score = 0;
     int p_cnt[Pattern::FIVE + 1] = {0};
     for (int d = 0; d < 4; d++) {
         Pattern p = Pattern(pattern_cache[color][d][x][y]);
@@ -142,7 +143,8 @@ void Evaluator::updatePointPattern(int x, int y, Color color, Points directions)
     else if (p_cnt[Pattern::TWO] + p_cnt[Pattern::TWO_A] + p_cnt[Pattern::TWO_B] >= 1)
         p4 = Pattern4::FLEX2;
 
-    score = getPatternScore(p4);
+    int score = getPatternScore(p4);
+    pattern4_cache[color][x][y] = p4;
 
     this->board[x][y] = -1;  // remove temporarily stone
 
@@ -194,8 +196,8 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
     Color first = depth % 2 ? ~color : color;  // if depth is even, set first as self color
     unordered_map<int, unordered_set<int>> points;
 
-    for (int pattern : {DEAD, OVER_LINE, BLOCK_ONE, ONE, BLOCK_TWO, TWO, TWO_A, TWO_B, BLOCK_THREE,
-                        THREE, THREE_S, BLOCK_FOUR, FOUR, Pattern::FIVE}) {
+    for (int pattern : {FLEX2, BLOCK3, FLEX2_2X, BLOCK3_PLUS, FLEX3, FLEX3_PLUS, FLEX3_2X, BLOCK4,
+                        BLOCK4_PLUS, BLOCK4_FLEX3, FLEX4, A_FIVE}) {
         points[pattern] = unordered_set<int>();
     }
 
@@ -208,57 +210,45 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
     for (Color c : {color, ~color}) {
         for (int x = 0; x < this->size; x++) {
             for (int y = 0; y < this->size; y++) {
-                int four_cnt = 0, block_four_cnt = 0, three_cnt = 0;
-                for (int direction = 0; direction < 4; direction++) {
-                    if (this->board[x][y] != -1) continue;  // already put stone
-                    Pattern p = Pattern(this->pattern_cache[c][direction][x][y]);
-                    if (p == Pattern::DEAD) continue;
+                if (this->board[x][y] != -1) continue;  // already put stone
+                Pattern4 p4 = Pattern4(this->pattern4_cache[c][x][y]);
+                if (p4 <= Pattern4::FORBIDDEN) continue;  // no pattern or forbidden
 
-                    int point = x * this->size + y;
+                int point = x * this->size + y;
 
-                    if (vcf) {
-                        if (c == first && !isFour(p) && !isFive(p)) {
-                            continue;
-                        } else if (c == ~first && isFive(p)) {
-                            continue;
-                        }
-                    }
-
-                    if (vct) {
-                        // only consider self turn
-                        if (depth % 2 == 0) {
-                            if (depth == 0 && c != first) continue;  // only attack
-                            if (p != THREE && p != THREE_S && !isFour(p) && !isFive(p)) continue;
-                            if ((p == THREE || p == THREE_S) && c != first) continue;
-                            if (depth == 0 && c != first) continue;
-                            if (depth > 0 && (p == THREE || p == THREE_S || p == BLOCK_FOUR) &&
-                                getPatternCountOfPoint(x, y, c) == 1)
-                                continue;
-                        } else {  // only consider defence
-                            if (p != THREE && p != THREE_S && !isFour(p) && !isFive(p)) continue;
-                            if (p == Pattern::THREE && c == ~first) continue;
-                            if (depth > 1) {
-                                if (p == Pattern::BLOCK_FOUR &&
-                                    getPatternCountOfPoint(x, y, Color::EMPTY) == 1)
-                                    continue;
-                                if (p == Pattern::BLOCK_FOUR && !isPointInLine(point, last_points))
-                                    continue;
-                            }
-                        }
-                    }
-
-                    if (vcf && !isFour(p) && !isFive(p)) continue;
-
-                    // ignore pattern value less than THREE when depth >= 3
-                    if (depth > 2 &&
-                        (p == Pattern::TWO || p == Pattern::TWO_A || p == Pattern::TWO_B ||
-                         p == Pattern::BLOCK_THREE) &&
-                        !isPointInLine(point, last_points)) {
+                if (vcf) {
+                    if (c == first && p4 < BLOCK4) {
+                        continue;
+                    } else if (c == ~first && p4 == A_FIVE) {
                         continue;
                     }
-
-                    points[p].insert(point);
                 }
+
+                if (vct) {
+                    // only consider self turn
+                    if (depth % 2 == 0) {
+                        if (depth == 0 && c != first) continue;  // only attack
+                        if (p4 <= BLOCK3_PLUS) continue;
+                        if ((p4 >= FLEX3 && p4 <= FLEX3_2X) && c != first) continue;
+                        if (depth == 0 && c != first) continue;
+                        // prune only one THREE or BLOCK_FOUR
+                        if (depth > 0 && (p4 == FLEX3 || p4 == BLOCK4)) continue;
+                    } else {  // only consider defence
+                        if (p4 <= BLOCK3) continue;
+                        if ((p4 >= FLEX3 && p4 <= FLEX3_2X) && c == ~first) continue;
+                        if (depth > 1) {
+                            if (p4 == BLOCK4) continue;
+                            if (p4 == BLOCK4 && !isPointInLine(point, last_points)) continue;
+                        }
+                    }
+                }
+
+                if (vcf && p4 < BLOCK4) continue;
+
+                // ignore pattern value less than THREE when depth >= 3
+                if (depth > 2 && p4 < FLEX3 && !isPointInLine(point, last_points)) continue;
+
+                points[p4].insert(point);
             }
         }
     }
@@ -268,12 +258,24 @@ unordered_map<int, unordered_set<int>> Evaluator::getPoints(Color color, int dep
 vector<int> Evaluator::getMoves(Color color, int depth, bool vct, bool vcf) {
     auto points = getPoints(color, depth, vct, vcf);
 
-    auto fives = points[Pattern::FIVE];
-    if (fives.size()) return {fives.begin(), fives.end()};
+    auto fives = points[A_FIVE];
+    if (fives.size()) {
+        fives.merge(points[FLEX4]);
+        return {fives.begin(), fives.end()};
+    }
+
+    auto flex4 = points[FLEX4];
+    auto block4 = points[BLOCK4];
+    block4.merge(points[BLOCK4_FLEX3]);
+    block4.merge(points[BLOCK4_PLUS]);
+    if (vcf || flex4.size()) {
+        flex4.merge(block4);
+        return {flex4.begin(), flex4.end()};
+    }
 
     unordered_set<int> others;
     vector<int> res;
-    for (int i = FOUR; i >= TWO; i--) {
+    for (int i = BLOCK4_FLEX3; i >= FLEX2; i--) {
         auto it = points[i].begin();
         while (others.size() < 25 && it != points[i].end()) {
             if (others.find(*it) == others.end()) {
